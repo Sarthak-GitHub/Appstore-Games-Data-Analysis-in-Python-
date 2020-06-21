@@ -1,0 +1,193 @@
+# Reading the file
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import calendar
+from datetime import datetime
+from pandas import Series
+from math import ceil
+
+# Loading data from CSV file
+df = pd.read_csv('appstore_games.csv', encoding="utf-8")
+dfa = df
+dfa = dfa.copy()
+df[:5]
+
+type(df)
+
+# Visualiztion of Data
+df.shape
+
+cols = ['Average User Rating', 'Price', 'Size', 'Genres', 'Developer']
+
+# Barplots of game point
+for col in cols:
+    chart = df[['Name', col]].groupby([col]).count().sort_values('Name', ascending=False).reset_index()
+    sns.set_style("white")
+    plt.figure(figsize=(12.4, 5))
+    plt.xticks(rotation=90)
+    sns.barplot(x=col, y='Name', data=chart[:30], palette=sns.cubehelix_palette((12 if col == 'Genre' else 30), dark=0.3, light=.85, reverse=True)).set_title(('Game count by '+col), fontsize=16)
+    plt.ylabel('Count', fontsize=14)
+    plt.xlabel('')
+    
+# distribution of top geners
+df['Genres'].value_counts()[:10].plot(kind='pie',autopct='%1.1f%%',shadow=True,explode=[0.1,0,0,0,0,0,0,0,0,0])
+plt.title('Distribution Of Top Genres')
+fig=plt.gcf()
+fig.set_size_inches(7,7)
+plt.show()
+
+def bar_plot(x,y,y_label,x_label,title,color,ax=None):
+    plt.figure(figsize=(5,8))
+    bar = sns.barplot(x = x,y=y,orient='h')
+    plt.ylabel(y_label)
+    plt.xlabel(x_label)
+    plt.title(title)
+    for i, v in enumerate(x.values):
+        bar.text(v + 3, i + .25, str(v), color='black', fontweight='bold')
+    return bar
+df2 = df['Genres'].value_counts()
+df2 = df2.reset_index()
+df2 = df2[df2['Genres'] > 100]
+bar_plot(x = df2['Genres'],y = df2['index'],y_label = 'Freq',title = 'Bar Chart On Genres',color='red',x_label='Genres')
+
+# Bar Chart on Price
+def bar_plot(x,y,y_label,x_label,title,color,ax=None):
+    plt.figure(figsize=(5,8))
+    bar = sns.barplot(x = x,y=y,orient='h')
+    plt.ylabel(y_label)
+    plt.xlabel(x_label)
+    plt.title(title)
+    for i, v in enumerate(x.values):
+        bar.text(v + 3, i + .25, str(v), color='black', fontweight='bold')
+    return bar
+df2 = df['Price'].value_counts()
+df2 = df2.reset_index()
+df2 = df2[df2['Price'] > 100]
+bar_plot(x = df2['Price'],y = df2['index'],y_label = 'Freq',title = 'Bar Chart On Price',color='red',x_label='Price')
+
+# Corelation between given data
+cor = df.corr()
+plt.figure(figsize=(16,10))
+sns.heatmap(cor, annot=True)
+
+#identifying null values
+#getting all the info of data
+df.info()
+
+# Not Available or Missing Values present in File
+df.isna().sum()
+
+#knowing the missing values by seaborn and increasing figure size by matplotlib
+plt.figure(figsize=(12,8)) 
+sns.heatmap(df.isnull())
+
+#dropping all rows where there are any missing values
+df.dropna()
+
+#to drop na values present in data
+df_filter = df.dropna()
+df_filter.count()
+
+#to drop na values present in data
+df_filter = df.dropna()
+df_filter.count()
+
+df_filter.describe()
+
+df_filter.shape
+
+# To drop column from data frame, axis=1 means drop column
+# axis=0 (default) to drop rows
+# inplace = True to drop column & update in same data name
+
+df.drop(['ID'], axis=1)
+
+pd.crosstab(df_filter['Average User Rating'], df_filter['Genres'])
+
+def rating(score):
+    if score >= 4.5:
+        return '4.5-5.0'
+    elif score >= 4.0:
+        return '4.0-4.4'
+    elif score >= 3.0:
+        return '3.0-3.9'
+    elif score >= 2.0:
+        return '2.0-2.9'
+    elif score >= 1.0:
+        return '1.0-1.9'
+    else:
+        return '0-0.9'
+        
+dfh = df.dropna(subset=['Average User Rating']).reset_index(drop=True)
+dfh['rating'] = dfh['Average User Rating'].apply(lambda x: rating(x))
+
+def in_top(x):
+    if x in pack:
+        return x
+    else:
+        pass
+def width(x):
+    if x == 'Size':
+        return 14.4
+    elif x == 'Developer':
+        return 13.2
+    elif x == 'Price':
+        return 11.3
+    elif x == 'Genres':
+        return 13.6
+
+def height(x):
+    if x == 'Genre':
+        return 8
+    else:
+        return 9
+        
+cols = ['Genres', 'Price', 'Size']
+for col in cols:
+    pack = []
+    top = dfh[['Name', col]].groupby([col]).count().sort_values('Name', ascending=False).reset_index()[:15]
+    for x in top[col]:
+        pack.append(x)
+    dfh[col] = dfh[col].apply(lambda x: in_top(x))
+    dfh_platform = dfh[[col, 'rating', 'Average User Rating']].groupby([col, 'rating']).median().reset_index().pivot(col, "rating", "Average User Rating")
+    plt.figure(figsize=(width(col), height(col)))
+    sns.heatmap(dfh_platform, annot=True, fmt=".2g", linewidths=.5).set_title((' \n'+col+' vs. Average User Rating \n'), fontsize=18)
+    plt.ylabel('', fontsize=14)
+    plt.xlabel('rating \n', fontsize=12)
+    pack = []
+    
+ cols = ['Genres', 'Developer']
+for col in cols:
+    uniques = df[col].value_counts().keys()
+    uniques_dict = {}
+    ct = 0
+    for i in uniques:
+        uniques_dict[i] = ct
+        ct += 1
+
+    for k, v in uniques_dict.items():
+        df.loc[df[col] == k, col] = v
+        
+df1 = df[['Genres', 'Average User Rating','User Rating Count', 'Price', 'Size', 'Developer']]
+df1 = df1.dropna().reset_index(drop=True)
+df1 = df1.astype('float64')
+
+mask = np.zeros_like(df1.corr())
+mask[np.triu_indices_from(mask)] = True
+cmap = sns.diverging_palette(730, 300, sep=20, as_cmap=True, s=85, l=15, n=20) # note: 680, 350/470
+with sns.axes_style("white"):
+    fig, ax = plt.subplots(1,1, figsize=(15,8))
+    ax = sns.heatmap(df1.corr(), mask=mask, vmax=0.2, square=True, annot=True, fmt=".3f", cmap=cmap)
+
+genres=  list(df2['index'][1:10])
+
+for i in genres:
+    
+    play = df[(df['Genres'] == i) & (df['Average User Rating'] >= 4.0)]['Name']
+    print('')
+    print('10 Appstore_games with Rating >= 4.0 and as Genre "{}" "'.format(i))
+    print('--------------------------------------------------')
+    print(play[0:11])
+    
